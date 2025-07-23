@@ -27,6 +27,11 @@ const upload = multer({
     s3: s3,
     bucket: process.env.AWS_S3_BUCKET,
     contentType: multerS3.AUTO_CONTENT_TYPE,
+    
+    contentDisposition: (req, file, cb) => {
+      cb(null, 'attachment');
+    },
+    
     key: (req, file, cb) => {
       const fileName = `${Date.now()}-${file.originalname}`;
       cb(null, fileName);
