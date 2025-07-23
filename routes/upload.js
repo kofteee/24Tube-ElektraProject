@@ -1,42 +1,37 @@
 const express = require('express');
 const multer = require('multer');
-const multerS3 = require('multer-s3');
 const path = require('path');
 const dotenv = require('dotenv');
-const { S3Client } = require("@aws-sdk/client-s3");
+const fs = require('fs');
+const os = require('os');
+const { promisify } = require('util');
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
+const ffmpeg = require('fluent-ffmpeg');
 
+const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const connectDB = require('./db');
 
 dotenv.config();
 
 const router = express.Router();
-const MAX_SIZE_MB = 100;
+const MAX_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB) || 100;
 
-// AWS S3 Client
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+const AZURE_STORAGE_CONTAINER_NAME = process.env.AZURE_STORAGE_CONTAINER_NAME;
 
-// Multer + S3 config
+const sharedKeyCredential = new StorageSharedKeyCredential(
+  process.env.AZURE_STORAGE_ACCOUNT_NAME,
+  process.env.AZURE_STORAGE_ACCOUNT_KEY
+);
+
+const blobServiceClient = new BlobServiceClient(
+  `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`,
+  sharedKeyCredential
+);
+
+const storage = multer.memoryStorage();
 const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.AWS_S3_BUCKET,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    
-    contentDisposition: (req, file, cb) => {
-      cb(null, 'attachment');
-    },
-    
-    key: (req, file, cb) => {
-      const fileName = `${Date.now()}-${file.originalname}`;
-      cb(null, fileName);
-    }
-  }),
+  storage: storage,
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.mp4', '.pdf', '.docx', '.png', '.jpg', '.xlsx'];
@@ -48,28 +43,80 @@ const upload = multer({
   }
 });
 
-// 📤 Upload Route
+// 🎞️ Faststart Dönüştürücü
+function convertToFastStart(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .outputOptions('-movflags +faststart')
+      .on('start', cmd => console.log('▶️ FFmpeg started:', cmd))
+      .on('end', () => {
+        console.log('✅ FFmpeg finished');
+        resolve(outputPath);
+      })
+      .on('error', err => {
+        console.error('❌ FFmpeg error:', err.message);
+        reject(err);
+      })
+      .save(outputPath);
+  });
+}
+// 📤 Upload Route (Azure Blob)
 router.post('/', upload.single('file'), async (req, res) => {
   console.log('📩 /api/upload endpoint hit');
 
   if (!req.file) {
-    console.log('⚠️  No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  console.log('✅ File uploaded:', req.file.originalname);
+  const originalName = req.file.originalname;
+  const ext = path.extname(originalName).toLowerCase();
+  const blobName = `${Date.now()}-${originalName}`;
+  const containerClient = blobServiceClient.getContainerClient(AZURE_STORAGE_CONTAINER_NAME);
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-  const info = {
-    s3_key: req.file.key,
-    original_name: req.file.originalname,
-    url: req.file.location,
-    size_bytes: req.file.size,
-    uploaded_at: new Date(),
-    download_info: [],
-    download_number: 0
-  };
+  let uploadBuffer = req.file.buffer;
+
+  let tempInputPath, tempOutputPath;
 
   try {
+    if (ext === '.mp4') {
+      // Geçici dosya yollxarı
+      tempInputPath = path.join(os.tmpdir(), `input-${Date.now()}.mp4`);
+      tempOutputPath = path.join(os.tmpdir(), `output-${Date.now()}.mp4`);
+
+      // Bellekteki buffer'ı geçici input dosyasına yaz
+      await writeFile(tempInputPath, uploadBuffer);
+
+      // Faststart dönüşümü yap
+      await convertToFastStart(tempInputPath, tempOutputPath);
+
+      // Çıktıyı oku ve buffer'a çevir
+      uploadBuffer = fs.readFileSync(tempOutputPath);
+    }
+
+    // Azure'a yükle
+    await blockBlobClient.uploadData(uploadBuffer, {
+      blobHTTPHeaders: {
+        blobContentType: req.file.mimetype
+      }
+    });
+
+    if (ext === '.mp4') {
+    console.log('📄 Original buffer size:', req.file.buffer.length);
+    console.log('📄 After faststart buffer size:', uploadBuffer.length);
+  }
+
+    // MongoDB kaydı
+    const info = {
+      blob_key: blobName,
+      original_name: originalName,
+      url: blockBlobClient.url,
+      size_bytes: uploadBuffer.length,
+      uploaded_at: new Date(),
+      download_info: [],
+      download_number: 0
+    };
+
     const db = await connectDB();
     const uploads = db.collection('uploads');
     const result = await uploads.insertOne(info);
@@ -78,9 +125,15 @@ router.post('/', upload.single('file'), async (req, res) => {
       _id: result.insertedId,
       ...info
     });
+    console.log(originalName + ' uploaded')
+
   } catch (err) {
-    console.error('❌ Upload save failed:', err.message);
-    res.status(500).json({ error: 'Database save failed' });
+    console.error('❌ Upload failed:', err.message);
+    res.status(500).json({ error: 'Upload or DB save failed' });
+  } finally {
+    // Geçici dosyaları sil
+    if (tempInputPath) unlink(tempInputPath).catch(() => {});
+    if (tempOutputPath) unlink(tempOutputPath).catch(() => {});
   }
 });
 

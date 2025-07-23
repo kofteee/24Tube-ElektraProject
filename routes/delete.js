@@ -1,21 +1,27 @@
 const express = require('express');
 const connectDB = require('./db');
+const dotenv = require('dotenv');
+const {
+  BlobServiceClient,
+  StorageSharedKeyCredential
+} = require('@azure/storage-blob');
 
-const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
-
-// AWS S3 Client
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+dotenv.config();
 
 const router = express.Router();
 
+// Azure Blob Credentials
+const account = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
 
-// 📤 List Route
+const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
+const blobServiceClient = new BlobServiceClient(
+  `https://${account}.blob.core.windows.net`,
+  sharedKeyCredential
+);
+
+// 📤 Delete Route
 router.post('/', async (req, res) => {
   console.log('📩 /api/delete endpoint hit');
 
@@ -26,23 +32,22 @@ router.post('/', async (req, res) => {
     const cursor = uploads.find({ original_name: req.body.original_name });
 
     if (!(await cursor.hasNext())) {
-    return res.status(404).send('No files found with that name\n');
+      return res.status(404).send('No files found with that name\n');
     }
 
-    await cursor.forEach(doc => 
-        s3.send(new DeleteObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: doc.s3_key, // 
-    })));
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    await cursor.forEach(async doc => {
+      const blobClient = containerClient.getBlobClient(doc.blob_key); 
+      await blobClient.deleteIfExists();
+    });
 
     await uploads.deleteMany({ original_name: req.body.original_name });
-    
-    res.status(200).send(req.body.original_name + " deleted.\n");
-    
 
+    res.status(200).send(req.body.original_name + ' deleted.\n');
   } catch (err) {
-    console.error('❌ Cannot fetch data:', err.message);
-    res.status(500).json({ error: 'Fetch problem' });
+    console.error('❌ Cannot delete blobs:', err.message);
+    res.status(500).json({ error: 'Delete problem' });
   }
 });
 
