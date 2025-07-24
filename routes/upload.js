@@ -63,6 +63,7 @@ function convertToFastStart(inputPath, outputPath) {
 // 📤 Upload Route (Azure Blob)
 router.post('/', upload.single('file'), async (req, res) => {
   console.log('📩 /api/upload endpoint hit');
+  const { tenant } = req.body;
 
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -118,7 +119,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     };
 
     const db = await connectDB();
-    const uploads = db.collection('uploads');
+    const uploads = db.collection(tenant);
     const result = await uploads.insertOne(info);
 
     res.status(200).json({

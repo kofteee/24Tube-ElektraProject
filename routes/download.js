@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
 
     let result = [];
 
-    const cursor = uploads.find({ original_name: req.body.original_name });
+    const cursor = uploads.find({ blob_key: req.body.blob_key });
     await cursor.forEach(doc => result.push({
         URL : doc.url,
     })); 

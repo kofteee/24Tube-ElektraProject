@@ -3,26 +3,31 @@ const connectDB = require('./db');
 
 const router = express.Router();
 
-// 📤 List Route
+// 📤 Info Route
 router.post('/', async (req, res) => {
   console.log('📩 /api/info endpoint hit');
+  const { blob_key, tenant } = req.body;
 
   try {
     const db = await connectDB();
-    const uploads = db.collection('uploads');
+    const uploads = db.collection(tenant);
 
-    let result = [];
+    const doc = await uploads.findOne({ blob_key: blob_key });
 
-    const cursor = uploads.find({ original_name: req.body.original_name });
-    await cursor.forEach(doc => result.push({
-        'File Name': doc.original_name,
-        'Download Number': doc.download_number,
-        'Download Info' : doc.download_info,
-    }));    
-
-    if (result.length === 0) {
-        return res.status(404).send('No files found with that name\n' );
+    if (!doc) {
+      return res.status(404).json({ error: 'No file found with that name' });
     }
+
+    const result = {
+      blob_key: doc.blob_key,
+      original_name: doc.original_name,
+      download_number: doc.download_number,
+      download_info: doc.download_info,
+      uploaded_at: doc.uploaded_at,
+      url: doc.url,
+      size_bytes: doc.size_bytes
+    };
+
     return res.status(200).json(result);
 
   } catch (err) {

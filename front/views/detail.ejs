@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title><%= info.original_name %> Detayı</title></head>
+<body>
+  <h2>Dosya Detayı</h2>
+  <ul>
+    <li><strong>Ad:</strong> <%= info.original_name %></li>
+    <li><strong>Boyut:</strong> <%= (info.size_bytes / 1024).toFixed(2) %> KB</li>
+    <li><strong>Tarih:</strong> <%= new Date(info.uploaded_at).toLocaleString() %></li>
+    <li> <a href="<%= info.url %>">Download</a></li>
+    <li>
+      <td>
+        <a 
+          href="/tenant/delete?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>" 
+          onclick="return confirm('Silmek istediğinize emin misiniz?')"
+        >
+          Delete
+        </a>
+      </td>
+    </li>
+    <li>
+      <td>
+        <a 
+          href="/tenant/preview?url=<%= info.url %>" 
+        >
+          Preview
+        </a>
+      </td>
+    </li>
+  </ul>
+  <a href="/tenant?tenant=<%= tenant %>">← Geri Dön</a>
+</body>
+</html>

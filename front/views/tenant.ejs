@@ -1,0 +1,26 @@
+<!-- views/tenant.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Tenant: <%= tenant %></title></head>
+<body>
+  <h2>Tenant: <%= tenant %></h2>
+
+  <!-- Dosya Yükle Formu -->
+  <form action="/tenant/upload" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="tenant" value="<%= tenant %>">
+    <input type="file" name="file" required>
+    <button type="submit">Yükle</button>
+  </form>
+
+  <!-- Dosya Listesi -->
+  <table border="1">
+    <tr><th>Dosya</th><th>Detay</th></tr>
+    <% data.forEach(function(doc) { %>
+      <tr>
+        <td><%= doc.original_name %></td>
+        <td><a href="/tenant/detail?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(doc.blob_key) %>">Detay</a></td>
+      </tr>
+    <% }); %>
+  </table>
+</body>
+</html>

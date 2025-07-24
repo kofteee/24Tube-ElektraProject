@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dosya Önizleme</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #000;
+    }
+
+    video, iframe, img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+    }
+
+    .fallback {
+      color: white;
+      text-align: center;
+      padding-top: 2rem;
+      font-family: sans-serif;
+    }
+
+    a {
+      color: #4FC3F7;
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <% if (ext === '.mp4') { %>
+    <video controls autoplay>
+      <source src="<%= url %>" type="video/mp4">
+      Tarayıcınız video etiketini desteklemiyor.
+    </video>
+  <% } else if (ext === '.pdf') { %>
+    <iframe src="<%= url %>" frameborder="0"></iframe>
+  <% } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.gif') { %>
+    <img src="<%= url %>" alt="Görsel Önizleme">
+  <% } else { %>
+    <div class="fallback">
+      <p>Bu dosya türü önizlenemiyor.</p>
+      <a href="<%= url %>" target="_blank">Dosyayı İndir</a>
+    </div>
+  <% } %>
+
+  <a href="javascript:history.back()">← Geri Dön</a>
+</body>
+</html>

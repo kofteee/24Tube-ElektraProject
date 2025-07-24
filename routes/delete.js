@@ -25,26 +25,26 @@ const blobServiceClient = new BlobServiceClient(
 router.post('/', async (req, res) => {
   console.log('📩 /api/delete endpoint hit');
 
+  const { blob_key, tenant } = req.body;
+  console.log(blob_key, tenant);
+  
   try {
     const db = await connectDB();
-    const uploads = db.collection('uploads');
+    const uploads = db.collection(tenant);
 
-    const cursor = uploads.find({ original_name: req.body.original_name });
-
-    if (!(await cursor.hasNext())) {
+    const doc = await uploads.findOne({ blob_key: blob_key });
+    
+    if (!(doc)) {
       return res.status(404).send('No files found with that name\n');
     }
 
     const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(doc.blob_key); 
+    await blobClient.deleteIfExists();
+  
+    await uploads.deleteOne({ blob_key: blob_key });
 
-    await cursor.forEach(async doc => {
-      const blobClient = containerClient.getBlobClient(doc.blob_key); 
-      await blobClient.deleteIfExists();
-    });
-
-    await uploads.deleteMany({ original_name: req.body.original_name });
-
-    res.status(200).send(req.body.original_name + ' deleted.\n');
+    res.status(200).send(blob_key + ' deleted.\n');
   } catch (err) {
     console.error('❌ Cannot delete blobs:', err.message);
     res.status(500).json({ error: 'Delete problem' });
