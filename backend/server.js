@@ -20,7 +20,7 @@ app.use('/api/info', infoRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/delete', deleteRoutes);
 
-const PORT = process.env.PORT || 8000;
+const PORT = 8000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
