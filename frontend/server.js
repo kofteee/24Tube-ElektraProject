@@ -24,6 +24,8 @@ app.get('/tenant', async (req, res) => {
   try {
     const response = await axios.get(`http://localhost:8000/api/list?tenant=${tenant}`);
     const data = response.data;
+
+
     res.render('tenant', { tenant, data });
   } catch (error) {
     res.status(500).send("Liste alınamadı.");
@@ -34,6 +36,7 @@ app.get('/tenant/detail', async (req, res) => {
   const { tenant, blob_key } = req.query;
   try {
     const response = await axios.post(`http://localhost:8000/api/info`, { blob_key, tenant });
+
     res.render('detail', { info: response.data, tenant });
   } catch (error) {
     res.status(500).send("Detay alınamadı.");
@@ -79,13 +82,67 @@ app.post('/tenant/upload', upload.single('file'), async (req, res) => {
 });
 
 app.get('/tenant/preview', async (req, res) => {
-  const url = req.query.url;
+  const blob_key = req.query.blob_key;
+  const tenant = req.query.tenant;
+
+
+  const response = await axios.post(`http://localhost:8000/api/preview`, { blob_key, tenant});
+
+  const url = response.data;
 
   if (!url) return res.status(400).send("URL eksik");
+
+  
 
   const ext = path.extname(url).toLowerCase(); // uzantıyı al
 
   res.render('preview', { url, ext });
+});
+
+app.get('/tenant/download/confirm', async (req, res) => {
+  const { tenant, blob_key } = req.query;
+  try {
+
+    res.render('download_form', {tenant, blob_key }); // yeni sayfa
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Dosya bilgisi alınamadı.");
+  }
+});
+
+app.post('/tenant/download', async (req, res) => {
+  const { tenant, blob_key, reason } = req.body;
+
+  try {
+    console.log(`📥 [${tenant}] ${blob_key} için sebep: ${reason}`);
+
+    const apiRes = await axios.post('http://localhost:8000/api/download', { tenant, blob_key, reason });
+    const fileUrl = apiRes.data;
+
+    const fileRes = await axios.get(fileUrl, { responseType: 'stream' });
+
+    const contentType = fileRes.headers['content-type'] || 'application/octet-stream';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${blob_key}"`);
+
+    fileRes.data.pipe(res);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("İndirme başlatılamadı.");
+  }
+});
+
+
+app.get('/tenant/download/history', async (req, res) => {
+  const { tenant, blob_key } = req.query;
+  try {
+    const response = await axios.post(`http://localhost:8000/api/info`, { blob_key, tenant });
+
+    res.render('download_history', { info: response.data, tenant });
+  } catch (error) {
+    res.status(500).send("Detay alınamadı.");
+  }
 });
 
 app.listen(PORT, () => {

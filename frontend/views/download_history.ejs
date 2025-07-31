@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>İndirme Geçmişi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f7f7f7;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #eee;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .empty {
+      margin-top: 20px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <h1><%= info.blob_key %> - İndirme Geçmişi</h1>
+
+  <% if (info.download_info && info.download_info.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Tarih</th>
+          <th>Kullanıcı</th>
+          <th>Sebep</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% info.download_info.forEach(entry => { %>
+          <tr>
+            <td><%= new Date(entry.date).toLocaleString('tr-TR') %></td>
+            <td><%= entry.user || 'Bilinmiyor' %></td>
+            <td><%= entry.reason %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p class="empty">Henüz indirme geçmişi yok.</p>
+  <% } %>
+
+</body>
+</html>

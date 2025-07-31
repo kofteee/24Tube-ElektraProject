@@ -25,7 +25,8 @@ router.post('/', async (req, res) => {
       download_info: doc.download_info,
       uploaded_at: doc.uploaded_at,
       url: doc.url,
-      size_bytes: doc.size_bytes
+      size_bytes: doc.size_bytes,
+      preview: doc.preview,
     };
 
     return res.status(200).json(result);

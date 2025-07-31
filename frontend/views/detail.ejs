@@ -1,5 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+<script>
+window.onpageshow = function(event) {
+  if (event.persisted) {
+    window.location.reload(); // not sure
+  }
+};
+</script>
 <head><meta charset="UTF-8"><title><%= info.original_name %> Detayı</title></head>
 <body>
   <h2>Dosya Detayı</h2>
@@ -7,7 +14,19 @@
     <li><strong>Ad:</strong> <%= info.original_name %></li>
     <li><strong>Boyut:</strong> <%= (info.size_bytes / 1024).toFixed(2) %> KB</li>
     <li><strong>Tarih:</strong> <%= new Date(info.uploaded_at).toLocaleString() %></li>
-    <li> <a href="<%= info.url %>">Download</a></li>
+    <li><strong>Görüntülenme sayısı:</strong> <%= info.preview %></li>
+    <li><strong>İndirilme sayısı:</strong> <%= info.download_number %></li>
+
+    <li>
+      <a href="/tenant/download/confirm?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>">
+        Download
+      </a>
+    </li>
+    <li>
+      <a href="/tenant/download/history?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>">
+        Download History
+      </a>
+    </li>
     <li>
       <td>
         <a 
@@ -21,9 +40,8 @@
     <li>
       <td>
         <a 
-          href="/tenant/preview?url=<%= info.url %>" 
-        >
-          Preview
+          href="/tenant/preview?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>" 
+          >Preview</a></li>
         </a>
       </td>
     </li>

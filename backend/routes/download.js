@@ -8,22 +8,30 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   console.log('📩 /api/download endpoint hit');
 
+    const { blob_key, tenant, reason } = req.body;
+
   try {
     const db = await connectDB();
-    const uploads = db.collection('uploads');
+    const uploads = db.collection(tenant);
 
-    let result = [];
 
-    const cursor = uploads.find({ blob_key: req.body.blob_key });
-    await cursor.forEach(doc => result.push({
-        URL : doc.url,
-    })); 
 
-    if (result.length === 0) {
-        return res.status(404).send('No files found with that name\n' );
-    }  
+    await uploads.updateOne(
+                          { blob_key },
+                          {
+                            $inc: { download_number: 1 },
+                            $push: {
+                              download_info: {
+                                user: 'demo',
+                                reason: reason,
+                                date: new Date()
+                              }
+                            }
+                          }
+);
+    const doc = await uploads.findOne({ blob_key });
 
-    res.status(200).json(result);
+    res.status(200).json(doc.url);
 
   } catch (err) {
     console.error('❌ Cannot fetch data:', err.message);

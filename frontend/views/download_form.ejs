@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>İndirme Sebebi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 500px;
+      height: 100px;
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>İndirme Sebebi</h2>
+
+  <form action="/tenant/download" method="POST">
+    <input type="hidden" name="tenant" value="<%= tenant %>">
+    <input type="hidden" name="blob_key" value="<%= blob_key %>">
+
+    <label for="reason">İndirme sebebinizi yazınız:</label><br>
+    <textarea name="reason" id="reason" required placeholder="Örn: Proje sunumunda kullanacağım."></textarea><br>
+
+    <button type="submit">İndir</button>
+  </form>
+</body>
+<script>
+  const form = document.querySelector('form');
+  form.addEventListener('submit', function (e) {
+    const reason = document.getElementById('reason').value.trim();
+    if (!reason) {
+      e.preventDefault();
+      alert('Lütfen geçerli bir indirme sebebi girin.');
+    }
+  });
+</script>
+</html>

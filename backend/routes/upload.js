@@ -34,7 +34,7 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.mp4', '.pdf', '.docx', '.png', '.jpg', '.xlsx'];
+    const allowed = ['.mp4', '.pdf', '.docx', '.png', '.jpg', '.xlsx', '.html'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (!allowed.includes(ext)) {
       return cb(new Error('Unsupported file type'));
@@ -115,7 +115,8 @@ router.post('/', upload.single('file'), async (req, res) => {
       size_bytes: uploadBuffer.length,
       uploaded_at: new Date(),
       download_info: [],
-      download_number: 0
+      download_number: 0,
+      preview: 0,
     };
 
     const db = await connectDB();
