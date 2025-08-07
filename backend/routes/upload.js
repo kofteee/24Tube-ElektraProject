@@ -30,6 +30,7 @@ const blobServiceClient = new BlobServiceClient(
 );
 
 const storage = multer.memoryStorage();
+
 const upload = multer({
   storage: storage,
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
@@ -43,11 +44,17 @@ const upload = multer({
   }
 });
 
-// 🎞️ Faststart Dönüştürücü
-function convertToFastStart(inputPath, outputPath) {
+function compressAndFaststartVideo(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
     ffmpeg(inputPath)
-      .outputOptions('-movflags +faststart')
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .audioBitrate('128k')
+      .outputOptions([
+        '-crf', '28',
+        '-preset', 'fast',
+        '-movflags', '+faststart'
+      ])
       .on('start', cmd => console.log('▶️ FFmpeg started:', cmd))
       .on('end', () => {
         console.log('✅ FFmpeg finished');
@@ -60,6 +67,7 @@ function convertToFastStart(inputPath, outputPath) {
       .save(outputPath);
   });
 }
+
 // 📤 Upload Route (Azure Blob)
 router.post('/', upload.single('file'), async (req, res) => {
   console.log('📩 /api/upload endpoint hit');
@@ -89,7 +97,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       await writeFile(tempInputPath, uploadBuffer);
 
       // Faststart dönüşümü yap
-      await convertToFastStart(tempInputPath, tempOutputPath);
+      await compressAndFaststartVideo(tempInputPath, tempOutputPath);
 
       // Çıktıyı oku ve buffer'a çevir
       uploadBuffer = fs.readFileSync(tempOutputPath);

@@ -8,26 +8,26 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   console.log('📩 /api/download endpoint hit');
 
-    const { blob_key, tenant, reason } = req.body;
+    const { tenant, blob_key, reason } = req.body;
 
+      console.log(blob_key, tenant, reason);
   try {
     const db = await connectDB();
     const uploads = db.collection(tenant);
 
 
-
     await uploads.updateOne(
-                          { blob_key },
-                          {
-                            $inc: { download_number: 1 },
-                            $push: {
-                              download_info: {
-                                user: 'demo',
-                                reason: reason,
-                                date: new Date()
-                              }
-                            }
-                          }
+    { blob_key },
+    {
+      $inc: { download_number: 1 },
+      $push: {
+        download_info: {
+          user: 'demo',
+          reason: reason,
+          date: new Date()
+        }
+      }
+    }
 );
     const doc = await uploads.findOne({ blob_key });
 

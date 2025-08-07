@@ -17,35 +17,31 @@ window.onpageshow = function(event) {
     <li><strong>Görüntülenme sayısı:</strong> <%= info.preview %></li>
     <li><strong>İndirilme sayısı:</strong> <%= info.download_number %></li>
 
-    <li>
-      <a href="/tenant/download/confirm?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>">
-        Download
-      </a>
-    </li>
-    <li>
-      <a href="/tenant/download/history?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>">
-        Download History
-      </a>
-    </li>
-    <li>
-      <td>
-        <a 
-          href="/tenant/delete?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>" 
-          onclick="return confirm('Silmek istediğinize emin misiniz?')"
-        >
-          Delete
-        </a>
-      </td>
-    </li>
-    <li>
-      <td>
-        <a 
-          href="/tenant/preview?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(info.blob_key) %>" 
-          >Preview</a></li>
-        </a>
-      </td>
-    </li>
+    <form action="/tenant/download/confirm" method="post">
+        <input type="hidden" name="tenant" value="<%= tenant %>">
+        <input type="hidden" name="blob_key" value="<%= info.blob_key %>">
+        <button type="submit">Download</button>
+      </form>
+
+    <form action="/tenant/download/history" method="post">
+        <input type="hidden" name="tenant" value="<%= tenant %>">
+        <input type="hidden" name="blob_key" value="<%= info.blob_key %>">
+        <button type="submit">Download History</button>
+      </form>
+
+    <form action="/tenant/delete" method="post">
+        <input type="hidden" name="tenant" value="<%= tenant %>">
+        <input type="hidden" name="blob_key" value="<%= info.blob_key %>">
+        <button type="submit">Delete</button>
+      </form>
+  
+      <form action="/tenant/preview" method="post">
+        <input type="hidden" name="tenant" value="<%= tenant %>">
+        <input type="hidden" name="blob_key" value="<%= info.blob_key %>">
+        <button type="submit">Preview</button>
+      </form>
+    
   </ul>
-  <a href="/tenant?tenant=<%= tenant %>">← Geri Dön</a>
+  <a href="javascript:history.back()">← Geri Dön</a>
 </body>
 </html>

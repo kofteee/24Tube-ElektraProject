@@ -18,7 +18,13 @@
     <% data.forEach(function(doc) { %>
       <tr>
         <td><%= doc.original_name %></td>
-        <td><a href="/tenant/detail?tenant=<%= tenant %>&blob_key=<%= encodeURIComponent(doc.blob_key) %>">Detay</a></td>
+        <td>
+          <form action="/tenant/detail" method="post">
+        <input type="hidden" name="tenant" value="<%= tenant %>">
+        <input type="hidden" name="blob_key" value="<%= doc.blob_key %>">
+        <button type="submit">Detay</button>
+      </form>
+        </td>
       </tr>
     <% }); %>
   </table>

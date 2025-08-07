@@ -40,7 +40,7 @@
 <body>
 
   <% if (ext === '.mp4') { %>
-    <video controls autoplay>
+    <video controls autoplay preload="metadata" playsinline style="max-width: 100%;">
       <source src="<%= url %>" type="video/mp4">
       Tarayıcınız video etiketini desteklemiyor.
     </video>

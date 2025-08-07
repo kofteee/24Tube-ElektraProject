@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
-
 const app = express();
 const PORT = 3000;
 
@@ -9,20 +8,18 @@ app.use(express.json()); // POST body parse eder
 // Middleware: Form verisini almak için
 app.use(express.urlencoded({ extended: true }));
 
-// Public klasöründeki HTML'leri sun
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.get('/', (req, res) => {
-  res.render('index'); // index.ejs gerekir
+  res.render('index'); // index.ejs 
 });
 
 app.get('/tenant', async (req, res) => {
   const tenant = req.query.tenant;
+
   try {
-    const response = await axios.get(`http://localhost:8000/api/list?tenant=${tenant}`);
+    const response = await axios.post('http://localhost:8000/api/list', {tenant});
     const data = response.data;
 
 
@@ -32,8 +29,8 @@ app.get('/tenant', async (req, res) => {
   }
 });
 
-app.get('/tenant/detail', async (req, res) => {
-  const { tenant, blob_key } = req.query;
+app.post('/tenant/detail', async (req, res) => {
+  const { tenant, blob_key } = req.body;
   try {
     const response = await axios.post(`http://localhost:8000/api/info`, { blob_key, tenant });
 
@@ -43,12 +40,14 @@ app.get('/tenant/detail', async (req, res) => {
   }
 });
 
-app.get('/tenant/delete', async (req, res) => {
-  const { tenant, blob_key } = req.query;
+app.post('/tenant/delete', async (req, res) => {
+  const { tenant, blob_key } = req.body;
   console.log(tenant, blob_key)
   try {
     const response = await axios.post(`http://localhost:8000/api/delete`, { blob_key, tenant });
+
     res.redirect(`/tenant?tenant=${tenant}`);
+
 
   } catch (error) {
     res.status(500).send("Detay alınamadı." + error.error);
@@ -72,8 +71,10 @@ app.post('/tenant/upload', upload.single('file'), async (req, res) => {
     const response = await axios.post('http://localhost:8000/api/upload', formData, {
       headers: formData.getHeaders()
     });
-
+    
     res.redirect(`/tenant?tenant=${tenant}`);
+
+
 
   } catch (err) {
     console.error("❌ Upload hatası:", err.message);
@@ -81,11 +82,8 @@ app.post('/tenant/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/tenant/preview', async (req, res) => {
-  const blob_key = req.query.blob_key;
-  const tenant = req.query.tenant;
-
-
+app.post('/tenant/preview', async (req, res) => {
+  const {blob_key, tenant} = req.body;
   const response = await axios.post(`http://localhost:8000/api/preview`, { blob_key, tenant});
 
   const url = response.data;
@@ -99,8 +97,8 @@ app.get('/tenant/preview', async (req, res) => {
   res.render('preview', { url, ext });
 });
 
-app.get('/tenant/download/confirm', async (req, res) => {
-  const { tenant, blob_key } = req.query;
+app.post('/tenant/download/confirm', async (req, res) => {
+  const { tenant, blob_key } = req.body;
   try {
 
     res.render('download_form', {tenant, blob_key }); // yeni sayfa
@@ -127,6 +125,7 @@ app.post('/tenant/download', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${blob_key}"`);
 
     fileRes.data.pipe(res);
+
   } catch (error) {
     console.error(error.message);
     res.status(500).send("İndirme başlatılamadı.");
@@ -134,8 +133,8 @@ app.post('/tenant/download', async (req, res) => {
 });
 
 
-app.get('/tenant/download/history', async (req, res) => {
-  const { tenant, blob_key } = req.query;
+app.post('/tenant/download/history', async (req, res) => {
+  const { tenant, blob_key } = req.body;
   try {
     const response = await axios.post(`http://localhost:8000/api/info`, { blob_key, tenant });
 

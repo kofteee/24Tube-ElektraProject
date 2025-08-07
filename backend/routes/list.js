@@ -4,9 +4,9 @@ const connectDB = require('./db');
 const router = express.Router();
 
 // 📤 List Route
-router.get('/', async (req, res) => {
+router.post('/', async (req, res) => {
   console.log('📩 /api/list endpoint hit');
-  const collection = req.query.tenant;
+  const collection = req.body.tenant;
 
   try {
     const db = await connectDB();

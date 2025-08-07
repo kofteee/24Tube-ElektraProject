@@ -27,7 +27,7 @@
 <body>
   <h2>İndirme Sebebi</h2>
 
-  <form action="/tenant/download" method="POST">
+  <form action="/tenant/download" method="post">
     <input type="hidden" name="tenant" value="<%= tenant %>">
     <input type="hidden" name="blob_key" value="<%= blob_key %>">
 
@@ -36,6 +36,8 @@
 
     <button type="submit">İndir</button>
   </form>
+    <a href="javascript:history.back()">← Geri Dön</a>
+
 </body>
 <script>
   const form = document.querySelector('form');
